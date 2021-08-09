@@ -13,4 +13,21 @@
   "files.associations": {
     "*.css": "postcss",
   },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBorder": "#cbf4df",
+    "activityBarBadge.background": "#cbf4df",
+    "activityBarBadge.foreground": "#15202b",
+    "statusBar.background": "#ca7a2c",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#a06123",
+    "titleBar.activeBackground": "#ca7a2c",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#ca7a2c99",
+    "titleBar.inactiveForeground": "#15202b99",
+    "activityBar.activeBackground": "#d99450",
+    "activityBar.background": "#d99450",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#CA7A2C",
 }

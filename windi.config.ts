@@ -11,6 +11,13 @@ export default defineConfig({
     typography(),
   ],
   theme: {
+    textColor: {
+      primary: '#ffffff',
+    },
+    backgroundColor: theme => ({
+      ...theme('colors'),
+      primary: '#8ac5e6',
+    }),
     extend: {
       typography: {
         DEFAULT: {
@@ -37,6 +44,9 @@ export default defineConfig({
             code: { color: 'inherit' },
           },
         },
+      },
+      fontFamily: {
+        ubuntu: ['Ubuntu'],
       },
     },
   },
