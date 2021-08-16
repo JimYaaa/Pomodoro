@@ -1,23 +1,25 @@
 
 <template>
-  <div class="w-full h-full bg-white flex items-center justify-center">
-    <button class="menu-btn cursor-pointer absolute top-10px left-10px">
-      <carbon-menu style="font-size: 20px; color: #4b5563" />
-    </button>
-    <div class="timer absolute top-10px right-10px text-xl font-ubuntu">
+  <div class="w-full h-full bg-white flex items-end justify-center bg-center bg-no-repeat bg-cover" :style="{ 'background-image': `url(${pomodoroBackground})` }">
+    <ul class="pomodoro-scoreboard absolute top-10px left-10px flex items-center justify-start flex-wrap">
+      <li
+        v-for="score in currentScore"
+        :key="score"
+        class="score w-30px mx-5px my-5px"
+      >
+        <img :src="pomodoroScore" alt="">
+      </li>
+    </ul>
+    <div class="timer absolute top-10px right-10px text-2xl font-mono text-primary">
       {{ formatMinute }}:{{ formatSecond }}
     </div>
-    <div class="content text-gray-600 flex flex-col items-center justify-center ">
-      <div class="desc text-lg">
-        Some Descriptioin.....
-      </div>
-      <div class="image-wrap w-120px my-80px">
-        <img v-if="isFocus" src="https://camo.githubusercontent.com/3c553beb641d154ec09f3f1cce78f434eb72a9b2843dc45e5aa191cc6234b383/687474703a2f2f7374617469632e76656c76657463616368652e6f72672f70616765732f323031382f30362f31332f70617274792d676f706865722f64616e63696e672d676f706865722e676966" alt="">
-        <img v-else src="https://camo.githubusercontent.com/e59bf7afa2dc165bb4b0a6fb84299ccbf12a5f2fb2e2e2e54df51db98c73614a/68747470733a2f2f7261772e6769746875622e636f6d2f676f6c616e672d73616d706c65732f676f706865722d766563746f722f6d61737465722f676f706865722d736964655f636f6c6f722e706e67" alt="">
-      </div>
-      <button class="focus-btn w-120px h-120px rounded-1/2 bg-primary text-primary font-bold focus:(outline-none)" @click="toggleFocus">
-        <span v-if="isFocus">Finish</span>
-        <span v-else>Focus</span>
+    <div class="pomodoro-gopher absolute" :class="{ buoyant: isFocus }">
+      <img :src="PomodoroGopher" alt="">
+    </div>
+    <div class="pomodoro-pooh relative w-full h-200px bg-center bg-no-repeat bg-cover" :style="{ 'background-image': `url(${pomodoroPooh})` }">
+      <button class="pomodoro-pooh__start-btn focus:(outline-none) font-ubuntu" @click="toggleFocus">
+        <span v-if="isFocus">Stop</span>
+        <span v-else>Start</span>
       </button>
     </div>
   </div>
@@ -25,7 +27,15 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import PomodoroBackground from '~/assets/pomodoro-background.png'
+import PomodoroPooh from '~/assets/pomodoro-pooh.png'
+import PomodoroGopher from '~/assets/gopher-alien.png'
+import PomodoroScore from '~/assets/pomodoro-ufo.png'
 
+const pomodoroBackground: string = PomodoroBackground
+const pomodoroPooh: string = PomodoroPooh
+const pomodoroGopher: string = PomodoroGopher
+const pomodoroScore: string = PomodoroScore
 const isFocus = ref(false)
 const start = ref(0)
 const second = ref<number>(0)
@@ -53,6 +63,10 @@ const formatDate = computed(() => {
   return `${month.value[date.getMonth()]}-${date.getDate()}`
 })
 
+const currentScore = computed(() => {
+  return state.value[formatDate.value] || []
+})
+
 const step = (timestamp: number) => {
   if (!isFocus.value) return
   const progress = timestamp - start.value
@@ -77,12 +91,52 @@ const toggleFocus = () => {
   if (isFocus.value) { window.requestAnimationFrame(step) }
   else {
     if (!state.value[formatDate.value]) state.value[formatDate.value] = []
-    state.value[formatDate.value].push('TEST')
+    state.value[formatDate.value].push(`${formatMinute.value}:${formatSecond.value}`)
     second.value = 0
     minute.value = 0
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@keyframes buoyant {
+  0% {
+    transform: translate(-50%, 0px);
+  }
+  50% {
+    transform: translate(-50%, -10px);
+  }
+  100% {
+    transform: translate(-50%, 0px);
+  }
+}
+
+.pomodoro-pooh {
+  &__start-btn {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    font-size: 50px;
+    transform: translateX(-50%);
+  }
+}
+
+.pomodoro-gopher {
+  position: absolute;
+  bottom: 220px;
+  left: 50%;
+  width: 210px;
+  transform: translateX(-50%);
+
+  &.buoyant {
+    animation: buoyant 3s ease-in-out infinite;
+  }
+}
+
+.pomodoro-scoreboard {
+  width: calc(40px * 5);
+}
+</style>
 
 <route lang="yaml">
 meta:
