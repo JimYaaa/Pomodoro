@@ -11,15 +11,17 @@
       </li>
     </ul>
     <div class="timer absolute top-10px right-10px text-2xl font-mono text-primary">
-      {{ formatMinute }}:{{ formatSecond }}
+      <span v-if="!isTimeup" class="standard-time">{{ formatMinute }}:{{ formatSecond }}</span>
+      <span v-else class="over-time text-waring">{{ formatOverTimeMinute }}:{{ formatOverTimeSecond }}</span>
     </div>
-    <div class="pomodoro-gopher absolute" :class="{ buoyant: isFocus }">
+    <div class="pomodoro-gopher absolute" :class="{ buoyant: pomodoroState.mode === FOCUS }">
       <img :src="PomodoroGopher" alt="">
     </div>
     <div class="pomodoro-pooh relative w-full h-200px bg-center bg-no-repeat bg-cover" :style="{ 'background-image': `url(${pomodoroPooh})` }">
-      <button class="pomodoro-pooh__start-btn focus:(outline-none) font-ubuntu" @click="toggleFocus">
-        <span v-if="isFocus">Stop</span>
-        <span v-else>Start</span>
+      <button class="pomodoro-pooh__start-btn focus:(outline-none) font-ubuntu" @click="startFocus">
+        <span v-if="pomodoroState.mode === FOCUS" @click.stop="stopFocus">Stop</span>
+        <span v-else-if="isTimeup && pomodoroState.mode !== BREAK">Break</span>
+        <span v-else @click.stop="startFocus">Start</span>
       </button>
     </div>
   </div>
@@ -31,70 +33,102 @@ import PomodoroBackground from '~/assets/pomodoro-background.png'
 import PomodoroPooh from '~/assets/pomodoro-pooh.png'
 import PomodoroGopher from '~/assets/gopher-alien.png'
 import PomodoroScore from '~/assets/pomodoro-ufo.png'
+import { FOCUS, BREAK, STOP } from '~/constant'
 
 const pomodoroBackground: string = PomodoroBackground
 const pomodoroPooh: string = PomodoroPooh
 const pomodoroGopher: string = PomodoroGopher
 const pomodoroScore: string = PomodoroScore
-const isFocus = ref(false)
+const pomodoroState = ref<{ mode: string; goal: number }>({
+  mode: STOP,
+  goal: 30,
+})
 const start = ref(0)
-const second = ref<number>(0)
+const second = ref<number>(10)
 const minute = ref<number>(0)
+const overTimeSecond = ref(0)
+const overTimeMinute = ref(0)
 const state = ref<any>(useStorage('focusData', {}))
 const month = ref([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 
+const formatTime = (time: number) => {
+  if (time <= 9)
+    return `0${time}`
+  else
+    return `${time}`
+}
+
 const formatSecond = computed(() => {
-  if (second.value <= 9)
-    return `0${second.value}`
-  else
-    return `${second.value}`
+  return formatTime(second.value)
 })
-
 const formatMinute = computed(() => {
-  if (minute.value <= 9)
-    return `0${minute.value}`
-  else
-    return `${minute.value}`
+  return formatTime(minute.value)
 })
-
+const formatOverTimeSecond = computed(() => {
+  return formatTime(overTimeSecond.value)
+})
+const formatOverTimeMinute = computed(() => {
+  return formatTime(overTimeMinute.value)
+})
 const formatDate = computed(() => {
   const date = new Date()
 
   return `${month.value[date.getMonth()]}-${date.getDate()}`
 })
-
 const currentScore = computed(() => {
   return state.value[formatDate.value] || []
 })
+const isTimeup = computed(() => {
+  return !second.value && !minute.value
+})
 
 const step = (timestamp: number) => {
-  if (!isFocus.value) return
+  if (pomodoroState.value.mode === STOP) return
   const progress = timestamp - start.value
 
   if (progress >= 1000) {
     start.value = timestamp
 
-    if (second.value < 59) {
-      second.value++
-    }
-    else {
-      second.value = 0
-      minute.value++
+    switch (true) {
+      case isTimeup.value:
+        if (overTimeSecond.value >= 59) {
+          overTimeSecond.value = 0
+          overTimeMinute.value++
+        }
+        else {
+          overTimeSecond.value++
+        }
+        break
+      default:
+        if (second.value <= 0) {
+          second.value = 59
+          minute.value--
+        }
+        else {
+          second.value--
+        }
     }
   }
   window.requestAnimationFrame(step)
 }
 
-const toggleFocus = () => {
-  isFocus.value = !isFocus.value
+const startFocus = () => {
+  pomodoroState.value.mode = FOCUS
+  window.requestAnimationFrame(step)
+  // isFocus.value = !isFocus.value
+  // if (isFocus.value) { window.requestAnimationFrame(step) }
+  // else {
+  //   if (!state.value[formatDate.value]) state.value[formatDate.value] = []
+  //   state.value[formatDate.value].push(`${formatMinute.value}:${formatSecond.value}`)
+  //   second.value = 0
+  //   minute.value = 0
+  // }
+}
 
-  if (isFocus.value) { window.requestAnimationFrame(step) }
-  else {
-    if (!state.value[formatDate.value]) state.value[formatDate.value] = []
-    state.value[formatDate.value].push(`${formatMinute.value}:${formatSecond.value}`)
-    second.value = 0
-    minute.value = 0
-  }
+const stopFocus = () => {
+  pomodoroState.value.mode = STOP
+  second.value = 10
+  minute.value = 0
 }
 </script>
 
@@ -129,7 +163,7 @@ const toggleFocus = () => {
   transform: translateX(-50%);
 
   &.buoyant {
-    animation: buoyant 3s ease-in-out infinite;
+    animation: buoyant 2s ease-in-out infinite;
   }
 }
 

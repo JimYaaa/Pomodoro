@@ -13,6 +13,7 @@ export default defineConfig({
   theme: {
     textColor: {
       primary: '#ffffff',
+      waring: '#cd3c3e',
     },
     backgroundColor: theme => ({
       ...theme('colors'),

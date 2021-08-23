@@ -14,6 +14,7 @@ declare module 'vue' {
     CarbonWarning: typeof import('virtual:vite-icons/carbon/warning')['default']
     Footer: typeof import('./src/components/Footer.vue')['default']
     README: typeof import('./src/components/README.md')['default']
+    Test: typeof import('./src/components/Test.vue')['default']
   }
 }
 
