@@ -19,8 +19,8 @@
     </div>
     <div class="pomodoro-pooh relative w-full h-200px bg-center bg-no-repeat bg-cover" :style="{ 'background-image': `url(${pomodoroPooh})` }">
       <button class="pomodoro-pooh__start-btn focus:(outline-none) font-ubuntu" @click="startFocus">
-        <span v-if="pomodoroState.mode === FOCUS" @click.stop="stopFocus">Stop</span>
-        <span v-else-if="isTimeup && pomodoroState.mode !== BREAK">Break</span>
+        <span v-if="pomodoroState.mode !== STOP && !isTimeup" @click.stop="stopFocus">Stop</span>
+        <span v-else-if="isTimeup && nextMode === BREAK" @click.stop="startBreak">Break</span>
         <span v-else @click.stop="startFocus">Start</span>
       </button>
     </div>
@@ -35,13 +35,42 @@ import PomodoroGopher from '~/assets/gopher-alien.png'
 import PomodoroScore from '~/assets/pomodoro-ufo.png'
 import { FOCUS, BREAK, STOP } from '~/constant'
 
+interface IPomodoroState {
+  mode: typeof STOP | typeof FOCUS | typeof BREAK
+  goal: number
+  [FOCUS]: {
+    minute: number
+    second: number
+    overMinute: number
+    overSecond: number
+  }
+  [BREAK]: {
+    minute: number
+    second: number
+    overMinute: number
+    overSecond: number
+  }
+}
+
 const pomodoroBackground: string = PomodoroBackground
 const pomodoroPooh: string = PomodoroPooh
 const pomodoroGopher: string = PomodoroGopher
 const pomodoroScore: string = PomodoroScore
-const pomodoroState = ref<{ mode: string; goal: number }>({
+const pomodoroState = ref<IPomodoroState>({
   mode: STOP,
   goal: 30,
+  [FOCUS]: {
+    minute: 0,
+    second: 0,
+    overMinute: 0,
+    overSecond: 0,
+  },
+  [BREAK]: {
+    minute: 0,
+    second: 0,
+    overMinute: 0,
+    overSecond: 0,
+  },
 })
 const start = ref(0)
 const second = ref<number>(10)
@@ -50,6 +79,10 @@ const overTimeSecond = ref(0)
 const overTimeMinute = ref(0)
 const state = ref<any>(useStorage('focusData', {}))
 const month = ref([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+const noticeMessage = ref({
+  [BREAK]: 'Your Break Over Time!!!! Is Time To Focus',
+  [FOCUS]: 'Your Focus Over Time!!!! Is Time To Break',
+})
 
 const formatTime = (time: number) => {
   if (time <= 9)
@@ -78,6 +111,16 @@ const formatDate = computed(() => {
 const currentScore = computed(() => {
   return state.value[formatDate.value] || []
 })
+const nextMode = computed(() => {
+  switch (pomodoroState.value.mode) {
+    case FOCUS:
+      return BREAK
+    case BREAK:
+      return FOCUS
+    default:
+      return STOP
+  }
+})
 const isTimeup = computed(() => {
   return !second.value && !minute.value
 })
@@ -91,6 +134,7 @@ const step = (timestamp: number) => {
 
     switch (true) {
       case isTimeup.value:
+        if (overTimeSecond.value % 10 === 0) alert(`${noticeMessage.value[pomodoroState.value.mode]}`)
         if (overTimeSecond.value >= 59) {
           overTimeSecond.value = 0
           overTimeMinute.value++
@@ -113,22 +157,41 @@ const step = (timestamp: number) => {
 }
 
 const startFocus = () => {
+  if (pomodoroState.value.focus.minute + pomodoroState.value.focus.second) {
+    pomodoroState.value.focus.minute = 0
+    pomodoroState.value.focus.second = 5
+    pomodoroState.value.focus.overMinute = overTimeMinute.value
+    pomodoroState.value.focus.overSecond = overTimeSecond.value
+
+    if (!state.value[formatDate.value]) state.value[formatDate.value] = []
+    state.value[formatDate.value].push(pomodoroState.value)
+  }
+
   pomodoroState.value.mode = FOCUS
+  second.value = 10
+  minute.value = 0
+  overTimeSecond.value = 0
+  overTimeMinute.value = 0
   window.requestAnimationFrame(step)
-  // isFocus.value = !isFocus.value
-  // if (isFocus.value) { window.requestAnimationFrame(step) }
-  // else {
-  //   if (!state.value[formatDate.value]) state.value[formatDate.value] = []
-  //   state.value[formatDate.value].push(`${formatMinute.value}:${formatSecond.value}`)
-  //   second.value = 0
-  //   minute.value = 0
-  // }
 }
 
 const stopFocus = () => {
   pomodoroState.value.mode = STOP
   second.value = 10
   minute.value = 0
+}
+
+const startBreak = () => {
+  pomodoroState.value.focus.minute = 0
+  pomodoroState.value.focus.second = 10
+  pomodoroState.value.focus.overMinute = overTimeMinute.value
+  pomodoroState.value.focus.overSecond = overTimeSecond.value
+
+  pomodoroState.value.mode = BREAK
+  second.value = 5
+  minute.value = 0
+  overTimeSecond.value = 0
+  overTimeMinute.value = 0
 }
 </script>
 
