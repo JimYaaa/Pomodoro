@@ -87,6 +87,18 @@ export default defineComponent({
       [FOCUS]: 'Your Focus Over Time!!!! Is Time To Break',
     })
 
+    const formatTime = (time: number) => {
+      if (time <= 9)
+        return `0${time}`
+      else
+        return `${time}`
+    }
+    const showNotification = (text: string) => {
+      const noti = new Notification('超時囉～', {
+        body: text,
+      })
+    }
+
     const formatSecond = computed(() => {
       return formatTime(second.value)
     })
@@ -130,7 +142,7 @@ export default defineComponent({
 
         switch (true) {
           case isTimeup.value:
-            if (overTimeSecond.value % 10 === 0) alert(`${noticeMessage.value[pomodoroState.value.mode]}`)
+            if (overTimeSecond.value % 10 === 0) showNotification(`${noticeMessage.value[pomodoroState.value.mode]}`)
             if (overTimeSecond.value >= 59) {
               overTimeSecond.value = 0
               overTimeMinute.value++
@@ -186,21 +198,14 @@ export default defineComponent({
       overTimeSecond.value = 0
       overTimeMinute.value = 0
     }
-    const formatTime = (time: number) => {
-      if (time <= 9)
-        return `0${time}`
-      else
-        return `${time}`
-    }
 
     onMounted(() => {
       if ('Notification' in window) {
         Notification.requestPermission((status) => {
-          console.log('User Choice', status)
           if (status !== 'granted')
             console.log('推播允許被拒絕了!')
           else
-            console.log('YA~~')
+            showNotification('Wow! This is great')
         })
       }
     })
