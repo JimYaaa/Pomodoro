@@ -28,7 +28,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from 'vue'
+import { defineComponent, onMounted, ref, computed } from 'vue'
 import { useStorage } from '@vueuse/core'
 import PomodoroBackground from '~/assets/pomodoro-background.png'
 import PomodoroPooh from '~/assets/pomodoro-pooh.png'
