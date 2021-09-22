@@ -29,7 +29,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, ref, computed } from 'vue'
-import { useStorage } from '@vueuse/core'
+import { useStorage, useIntervalFn } from '@vueuse/core'
 import PomodoroBackground from '~/assets/pomodoro-background.png'
 import PomodoroPooh from '~/assets/pomodoro-pooh.png'
 import PomodoroGopher from '~/assets/gopher-alien.png'
@@ -86,7 +86,6 @@ export default defineComponent({
       [BREAK]: 'Your Break Over Time!!!! Is Time To Focus',
       [FOCUS]: 'Your Focus Over Time!!!! Is Time To Break',
     })
-
     const formatTime = (time: number) => {
       if (time <= 9)
         return `0${time}`
@@ -132,43 +131,38 @@ export default defineComponent({
     const isTimeup = computed(() => {
       return !second.value && !minute.value
     })
-
-    const step = (timestamp: number) => {
+    const { resume } = useIntervalFn(() => {
       if (pomodoroState.value.mode === STOP) return
-      const progress = timestamp - start.value
+      start.value += 1
 
-      if (progress >= 1000) {
-        start.value = timestamp
-
-        switch (true) {
-          case isTimeup.value:
-            if (overTimeSecond.value % 10 === 0) showNotification(`${noticeMessage.value[pomodoroState.value.mode]}`)
-            if (overTimeSecond.value >= 59) {
-              overTimeSecond.value = 0
-              overTimeMinute.value++
-            }
-            else {
-              overTimeSecond.value++
-            }
-            break
-          default:
-            if (second.value <= 0) {
-              second.value = 59
-              minute.value--
-            }
-            else {
-              second.value--
-            }
-        }
+      switch (true) {
+        case isTimeup.value:
+          if (overTimeSecond.value % 10 === 0) showNotification(`${noticeMessage.value[pomodoroState.value.mode]}`)
+          if (overTimeSecond.value >= 59) {
+            overTimeSecond.value = 0
+            overTimeMinute.value++
+          }
+          else {
+            overTimeSecond.value++
+          }
+          break
+        default:
+          if (second.value <= 0) {
+            second.value = 59
+            minute.value--
+          }
+          else {
+            second.value--
+          }
       }
-      window.requestAnimationFrame(step)
-    }
+    }, 1000)
     const startFocus = () => {
+      resume()
       if (pomodoroState.value.focus.minute + pomodoroState.value.focus.second) {
         pomodoroState.value.focus.minute = 0
         pomodoroState.value.focus.second = 5
-        pomodoroState.value.focus.overMinute = overTimeMinute.value
-        pomodoroState.value.focus.overSecond = overTimeSecond.value
+        pomodoroState.value.break.overMinute = overTimeMinute.value
+        pomodoroState.value.break.overSecond = overTimeSecond.value
 
         if (!state.value[formatDate.value]) state.value[formatDate.value] = []
         state.value[formatDate.value].push(pomodoroState.value)
@@ -179,7 +173,6 @@ export default defineComponent({
       minute.value = 0
       overTimeSecond.value = 0
       overTimeMinute.value = 0
-      window.requestAnimationFrame(step)
     }
     const stopFocus = () => {
       pomodoroState.value.mode = STOP
